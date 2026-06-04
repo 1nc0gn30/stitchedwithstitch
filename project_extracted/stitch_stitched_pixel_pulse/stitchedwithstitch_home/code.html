@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>stitchedwithstitch | Woven from Code</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #131318;
+            color: #e4e1e9;
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .neon-bloom {
+            box-shadow: 0 0 20px rgba(209, 188, 255, 0.15);
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+        .pulse-indicator {
+            animation: pulse-slow 3s infinite ease-in-out;
+        }
+        .reveal-text {
+            animation: reveal-fade 6s forwards ease-out;
+        }
+        @keyframes reveal-fade {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }
+            20% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+            80% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+            100% { opacity: 0.1; transform: translateY(-10px) scale(1.05); filter: blur(4px); }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#958da3",
+                        "inverse-primary": "#7212ff",
+                        "on-background": "#e4e1e9",
+                        "on-primary-container": "#ddcdff",
+                        "surface-container-lowest": "#0e0e13",
+                        "on-error": "#690005",
+                        "surface-variant": "#35343a",
+                        "surface-container-low": "#1b1b20",
+                        "secondary-container": "#00eefc",
+                        "on-secondary": "#00363a",
+                        "secondary-fixed-dim": "#00dbe9",
+                        "on-tertiary-fixed": "#3b002f",
+                        "secondary-fixed": "#7df4ff",
+                        "surface-bright": "#39383e",
+                        "surface-tint": "#d1bcff",
+                        "primary-fixed-dim": "#d1bcff",
+                        "secondary": "#d3fbff",
+                        "inverse-surface": "#e4e1e9",
+                        "on-surface-variant": "#ccc3da",
+                        "surface-container": "#1f1f24",
+                        "tertiary-container": "#ac008e",
+                        "primary-container": "#7000ff",
+                        "on-tertiary-container": "#ffc4e7",
+                        "error-container": "#93000a",
+                        "tertiary": "#ffade1",
+                        "outline-variant": "#4a4457",
+                        "tertiary-fixed": "#ffd8ed",
+                        "surface": "#131318",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-highest": "#35343a",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed": "#002022",
+                        "on-secondary-container": "#00686f",
+                        "surface-container-high": "#2a292f",
+                        "on-tertiary-fixed-variant": "#86006f",
+                        "tertiary-fixed-dim": "#ffade1",
+                        "surface-dim": "#131318",
+                        "primary": "#d1bcff",
+                        "primary-fixed": "#e9ddff",
+                        "on-primary": "#3c0090",
+                        "on-surface": "#e4e1e9",
+                        "on-tertiary": "#5f004e",
+                        "on-primary-fixed-variant": "#5700c9",
+                        "on-primary-fixed": "#23005b",
+                        "on-secondary-fixed-variant": "#004f54",
+                        "inverse-on-surface": "#303035",
+                        "background": "#131318"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "container-padding": "24px",
+                        "trail-width": "2px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Hanken Grotesk"],
+                        "display-lg-mobile": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "label-sm": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "1.1", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-sm": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background overflow-hidden">
+<!-- Three.js Canvas -->
+<canvas id="gl-canvas"></canvas>
+<!-- UI Overlay: TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-container-padding py-4 max-w-7xl mx-auto floating mx-base mt-base rounded-full border border-outline-variant/30 bg-surface/40 backdrop-blur-xl shadow-[0_0_20px_rgba(209,188,255,0.15)]">
+<div class="flex items-center gap-4">
+<span class="font-label-sm text-label-sm tracking-widest uppercase text-secondary dark:text-secondary-fixed-dim">stitchedwithstitch</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-primary font-bold border-b border-primary pb-1 font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">Experience</a>
+<a class="text-on-surface-variant font-medium font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">Gallery</a>
+<a class="text-on-surface-variant font-medium font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">Connect</a>
+<a class="text-on-surface-variant font-medium font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">About</a>
+</nav>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-variant/50 transition-all active:scale-90 scale-95 duration-200">
+<span class="material-symbols-outlined text-primary">refresh</span>
+</button>
+</div>
+</header>
+<!-- Central Reveal Text -->
+<main class="relative z-10 w-full h-screen flex items-center justify-center pointer-events-none">
+<div class="text-center reveal-text px-6">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg tracking-tighter text-on-background mb-4">
+                Woven by Code. <br/>
+<span class="text-secondary">Healed by AI.</span>
+</h1>
+<p class="font-label-sm text-label-sm text-outline tracking-[0.2em] uppercase">Interactive Digital Craftsmanship</p>
+</div>
+</main>
+<!-- Interactive Elements Container (Hidden visuals managed by JS/Canvas) -->
+<div class="fixed inset-0 pointer-events-none z-5" id="noise-overlay"></div>
+<!-- UI Overlay: Footer -->
+<footer class="fixed bottom-0 w-full z-40 flex flex-col md:flex-row justify-between items-center px-container-padding py-8 pointer-events-none children:pointer-events-auto bg-transparent">
+<div class="flex items-center gap-4 pointer-events-auto">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary pulse-indicator shadow-[0_0_8px_#00dbe9]"></div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-widest">© 2024 STITCHEDWITHSTITCH. WOVEN FROM CODE.</span>
+</div>
+</div>
+<nav class="flex gap-6 mt-4 md:mt-0 pointer-events-auto">
+<a class="font-label-sm text-label-sm text-outline hover:text-on-background transition-opacity opacity-80 hover:opacity-100" href="#">Journal</a>
+<a class="font-label-sm text-label-sm text-outline hover:text-on-background transition-opacity opacity-80 hover:opacity-100" href="#">Pulse</a>
+<a class="font-label-sm text-label-sm text-outline hover:text-on-background transition-opacity opacity-80 hover:opacity-100" href="#">Privacy</a>
+</nav>
+</footer>
+<!-- Three.js Implementation -->
+<script>
+        let scene, camera, renderer, clock;
+        let particles, shapes = [];
+        let mouse = new THREE.Vector2(0, 0);
+        let targetMouse = new THREE.Vector2(0, 0);
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x131318);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl-canvas'), antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            clock = new THREE.Clock();
+
+            // Background "Pixel Grid" environment
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 1500;
+            const posArray = new Float32Array(starCount * 3);
+            for(let i=0; i < starCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 15;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.015,
+                color: 0x958da3,
+                transparent: true,
+                opacity: 0.5
+            });
+            particles = new THREE.Points(starGeometry, starMaterial);
+            scene.add(particles);
+
+            // Floating Geometric Shapes (Cyber Nature)
+            const geometry = new THREE.IcosahedronGeometry(1, 0); // Low poly for pixel vibe
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xd1bcff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.4
+            });
+
+            for(let i=0; i<12; i++) {
+                const shape = new THREE.Mesh(geometry, material.clone());
+                shape.position.set(
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 5
+                );
+                shape.rotation.set(Math.random(), Math.random(), Math.random());
+                shape.scale.setScalar(Math.random() * 0.5 + 0.2);
+                shapes.push({
+                    mesh: shape,
+                    speed: Math.random() * 0.01,
+                    originalPos: shape.position.clone()
+                });
+                scene.add(shape);
+            }
+
+            // Lighting
+            const mainLight = new THREE.PointLight(0x00eefc, 2, 20);
+            mainLight.position.set(2, 3, 4);
+            scene.add(mainLight);
+
+            const ambientLight = new THREE.AmbientLight(0x3c0090, 0.4);
+            scene.add(ambientLight);
+
+            animate();
+        }
+
+        // Mouse Interactivity
+        window.addEventListener('mousemove', (e) => {
+            targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            targetMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            // Smooth mouse follow
+            mouse.x += (targetMouse.x - mouse.x) * 0.05;
+            mouse.y += (targetMouse.y - mouse.y) * 0.05;
+
+            // Rotate camera slightly based on mouse
+            camera.position.x += (mouse.x * 0.5 - camera.position.x) * 0.05;
+            camera.position.y += (mouse.y * 0.5 - camera.position.y) * 0.05;
+            camera.lookAt(0, 0, 0);
+
+            // Animate Shapes
+            shapes.forEach((s, i) => {
+                s.mesh.rotation.x += 0.005;
+                s.mesh.rotation.y += 0.005;
+                
+                // Sinusoidal "Floating" motion
+                s.mesh.position.y = s.originalPos.y + Math.sin(time + i) * 0.2;
+                
+                // React to mouse proximity
+                const dist = s.mesh.position.distanceTo(new THREE.Vector3(mouse.x * 5, mouse.y * 5, 0));
+                if (dist < 2) {
+                    s.mesh.scale.setScalar(Math.min(0.8, s.mesh.scale.x + 0.02));
+                    s.mesh.material.color.setHex(0x00eefc);
+                    s.mesh.material.opacity = 0.8;
+                } else {
+                    s.mesh.scale.setScalar(Math.max(0.3, s.mesh.scale.x - 0.01));
+                    s.mesh.material.color.lerp(new THREE.Color(0xd1bcff), 0.05);
+                    s.mesh.material.opacity = 0.4;
+                }
+            });
+
+            // "Self-Healing" Logic: If particles drift too far or get stuck, reset them
+            particles.rotation.y += 0.001;
+            if (time % 10 < 0.1) {
+                // Subtle repair: gently nudge particles back towards center if they wandered
+                const positions = particles.geometry.attributes.position.array;
+                for(let i=0; i<positions.length; i++) {
+                    if(Math.abs(positions[i]) > 10) positions[i] *= 0.95;
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+<!-- Noise Wave Micro-interactions (CSS-based trail effect) -->
+<script>
+        const overlay = document.getElementById('noise-overlay');
+        let trails = [];
+
+        window.addEventListener('mousemove', (e) => {
+            if (Math.random() > 0.8) {
+                createTrail(e.clientX, e.clientY);
+            }
+        });
+
+        function createTrail(x, y) {
+            const trail = document.createElement('div');
+            trail.className = 'fixed rounded-full pointer-events-none blur-xl transition-all duration-1000';
+            const size = Math.random() * 40 + 20;
+            trail.style.width = `${size}px`;
+            trail.style.height = `${size}px`;
+            trail.style.left = `${x - size/2}px`;
+            trail.style.top = `${y - size/2}px`;
+            
+            const colors = ['#d1bcff', '#00eefc', '#ffade1'];
+            trail.style.background = colors[Math.floor(Math.random() * colors.length)];
+            trail.style.opacity = '0.3';
+            
+            overlay.appendChild(trail);
+
+            // Animate out
+            setTimeout(() => {
+                trail.style.transform = `scale(0.5) translateY(20px)`;
+                trail.style.opacity = '0';
+                setTimeout(() => trail.remove(), 1000);
+            }, 50);
+        }
+
+        // Logic check to prevent too many elements
+        setInterval(() => {
+            if (overlay.children.length > 50) {
+                overlay.innerHTML = ''; // Self-healing overflow prevention
+            }
+        }, 5000);
+    </script>
+</body></html>

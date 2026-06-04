@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>stitchedwithstitch | Woven from Code</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #131318;
+            color: #e4e1e9;
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(209, 188, 255, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 2px;
+            background: #00eefc;
+            transform: translate(-50%, -50%);
+        }
+        .interaction-prompt {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: #d1bcff;
+            background: rgba(19, 19, 24, 0.8);
+            padding: 8px 16px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 100;
+            text-transform: uppercase;
+        }
+        .controls-hint {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #958da3;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#d1bcff",
+                        "outline": "#958da3",
+                        "background": "#131318",
+                        "surface": "#131318",
+                        "secondary": "#00dbe9",
+                        "tertiary": "#ffade1"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background">
+<canvas id="gl-canvas"></canvas>
+<div class="crosshair"></div>
+<div class="interaction-prompt" id="interaction-prompt">Press E to Interact</div>
+<div class="controls-hint">
+    WASD to Fly • MOUSE to Look • CLICK to Start
+</div>
+<main class="fixed inset-0 z-10 flex items-center justify-center pointer-events-none" id="hero-container">
+<div class="text-center px-6 max-w-3xl opacity-20 transition-opacity duration-1000" id="hero-text">
+<h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4 text-primary">Woven by Code.</h1>
+<p class="font-mono text-xs tracking-[0.4em] uppercase text-outline">Interactive Digital Craftsmanship</p>
+</div>
+</main>
+<script>
+    let scene, camera, renderer, clock;
+    let starPixels, noiseWave;
+    let navObjects = [];
+    let controls = { forward: false, backward: false, left: false, right: false };
+    let velocity = new THREE.Vector3();
+    let direction = new THREE.Vector3();
+    let pitch = 0, yaw = 0;
+    const speed = 0.15;
+    
+    let isLocked = false;
+    let raycaster = new THREE.Raycaster();
+    let intersectedObj = null;
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0e0e13);
+        scene.fog = new THREE.FogExp2(0x0e0e13, 0.05);
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 10);
+
+        renderer = new THREE.WebGLRenderer({ 
+            canvas: document.getElementById('gl-canvas'), 
+            antialias: true 
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        clock = new THREE.Clock();
+
+        // 1. Starfield
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 5000;
+        const positions = new Float32Array(starCount * 3);
+        for(let i=0; i < starCount * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 100;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const starMaterial = new THREE.PointsMaterial({ size: 0.05, color: 0x958da3, transparent: true, opacity: 0.5 });
+        starPixels = new THREE.Points(starGeometry, starMaterial);
+        scene.add(starPixels);
+
+        // 2. Interactive Navigation Objects
+        const navData = [
+            { text: 'EXPERIENCE', pos: [5, 2, -10], color: 0x7000ff },
+            { text: 'GALLERY', pos: [-8, -3, -15], color: 0x00eefc },
+            { text: 'CONNECT', pos: [10, -5, -20], color: 0xffade1 },
+            { text: 'ABOUT', pos: [-5, 6, -12], color: 0xd1bcff },
+            { text: 'STITCH', pos: [0, 0, -5], color: 0xffffff, isBrand: true }
+        ];
+
+        navData.forEach(data => {
+            const group = new THREE.Group();
+            
+            // Core geometric shape
+            const geom = data.isBrand ? new THREE.IcosahedronGeometry(1.2, 1) : new THREE.BoxGeometry(1, 1, 1);
+            const mat = new THREE.MeshBasicMaterial({ 
+                color: data.color, 
+                wireframe: true, 
+                transparent: true, 
+                opacity: 0.6 
+            });
+            const mesh = new THREE.Mesh(geom, mat);
+            group.add(mesh);
+
+            // "Pixel-art" expansion shell (initially hidden/small)
+            const shellGeom = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+            const shellMat = new THREE.MeshBasicMaterial({ color: data.color, wireframe: true, transparent: true, opacity: 0 });
+            const shell = new THREE.Mesh(shellGeom, shellMat);
+            group.add(shell);
+
+            group.position.set(...data.pos);
+            group.userData = { 
+                label: data.text, 
+                baseScale: 1, 
+                active: false, 
+                healFactor: 1,
+                color: data.color
+            };
+            
+            navObjects.push(group);
+            scene.add(group);
+        });
+
+        // 3. User POV Noise Trail
+        const trailCount = 100;
+        const trailGeom = new THREE.BufferGeometry();
+        const trailPos = new Float32Array(trailCount * 3);
+        const trailColors = new Float32Array(trailCount * 3);
+        trailGeom.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+        trailGeom.setAttribute('color', new THREE.BufferAttribute(trailColors, 3));
+        
+        const trailMat = new THREE.PointsMaterial({
+            size: 0.15,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        noiseWave = new THREE.Points(trailGeom, trailMat);
+        scene.add(noiseWave);
+
+        setupControls();
+        window.addEventListener('resize', onWindowResize);
+        animate();
+        
+        // Healing Loop
+        setInterval(healWorld, 3000);
+    }
+
+    function setupControls() {
+        document.body.addEventListener('click', () => {
+            if(!isLocked) {
+                document.body.requestPointerLock();
+                document.getElementById('hero-text').style.opacity = '1';
+            }
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            isLocked = document.pointerLockElement === document.body;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isLocked) return;
+            yaw -= e.movementX * 0.002;
+            pitch -= e.movementY * 0.002;
+            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+        });
+
+        const onKey = (val) => (e) => {
+            switch(e.code) {
+                case 'KeyW': case 'ArrowUp': controls.forward = val; break;
+                case 'KeyS': case 'ArrowDown': controls.backward = val; break;
+                case 'KeyA': case 'ArrowLeft': controls.left = val; break;
+                case 'KeyD': case 'ArrowRight': controls.right = val; break;
+                case 'KeyE': if(val && intersectedObj) interact(intersectedObj); break;
+            }
+        };
+        document.addEventListener('keydown', onKey(true));
+        document.addEventListener('keyup', onKey(false));
+    }
+
+    function interact(obj) {
+        console.log("Interacting with:", obj.userData.label);
+        // Visual feedback for interaction
+        obj.userData.healFactor = 4;
+        const color = new THREE.Color(0xffffff);
+        obj.children[0].material.color.set(color);
+        setTimeout(() => {
+            obj.children[0].material.color.set(obj.userData.color);
+        }, 500);
+    }
+
+    function healWorld() {
+        navObjects.forEach(obj => {
+            // Self-healing: Reset scale and opacity if they drifted
+            obj.userData.healFactor = THREE.MathUtils.lerp(obj.userData.healFactor, 1, 0.1);
+        });
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        const time = clock.getElapsedTime();
+
+        if (isLocked) {
+            // Movement logic
+            direction.z = Number(controls.forward) - Number(controls.backward);
+            direction.x = Number(controls.right) - Number(controls.left);
+            direction.normalize();
+
+            velocity.z = direction.z * speed;
+            velocity.x = direction.x * speed;
+
+            camera.rotation.order = "YXZ";
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+
+            camera.translateZ(-velocity.z);
+            camera.translateX(velocity.x);
+
+            // Update user trail emitted from camera
+            const positions = noiseWave.geometry.attributes.position.array;
+            const colors = noiseWave.geometry.attributes.color.array;
+            
+            for (let i = 99; i > 0; i--) {
+                positions[i * 3] = positions[(i - 1) * 3];
+                positions[i * 3 + 1] = positions[(i - 1) * 3 + 1];
+                positions[i * 3 + 2] = positions[(i - 1) * 3 + 2];
+            }
+            
+            // Offset trail slightly behind camera
+            const trailOrigin = new THREE.Vector3(0, -0.2, 0.5);
+            trailOrigin.applyQuaternion(camera.quaternion);
+            trailOrigin.add(camera.position);
+
+            positions[0] = trailOrigin.x;
+            positions[1] = trailOrigin.y;
+            positions[2] = trailOrigin.z;
+
+            const trailColor = new THREE.Color();
+            for (let i = 0; i < 100; i++) {
+                const ratio = i / 100;
+                trailColor.setHSL((time * 0.1 + ratio) % 1, 0.8, 0.6);
+                colors[i * 3] = trailColor.r;
+                colors[i * 3 + 1] = trailColor.g;
+                colors[i * 3 + 2] = trailColor.b;
+            }
+            noiseWave.geometry.attributes.position.needsUpdate = true;
+            noiseWave.geometry.attributes.color.needsUpdate = true;
+        }
+
+        // Object Animations & Proximity Effects
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const intersects = raycaster.intersectObjects(navObjects.map(o => o.children[0]));
+        
+        const prompt = document.getElementById('interaction-prompt');
+        if (intersects.length > 0) {
+            intersectedObj = intersects[0].object.parent;
+            prompt.style.opacity = '1';
+            prompt.innerText = `Focus: ${intersectedObj.userData.label} [E]`;
+        } else {
+            intersectedObj = null;
+            prompt.style.opacity = '0';
+        }
+
+        navObjects.forEach(obj => {
+            const dist = camera.position.distanceTo(obj.position);
+            
+            // Visual glitch/healing effect based on proximity
+            if (dist < 4) {
+                const intensity = (4 - dist) / 4;
+                obj.userData.healFactor = 1 + intensity * 2;
+                obj.children[1].material.opacity = intensity * 0.3;
+                obj.children[1].scale.setScalar(1 + Math.sin(time * 10) * 0.1);
+            } else {
+                obj.children[1].material.opacity = THREE.MathUtils.lerp(obj.children[1].material.opacity, 0, 0.1);
+            }
+
+            const s = obj.userData.healFactor;
+            obj.scale.lerp(new THREE.Vector3(s, s, s), 0.1);
+            obj.rotation.y += 0.01 * obj.userData.healFactor;
+            obj.rotation.z += 0.005;
+        });
+
+        renderer.render(scene, camera);
+    }
+
+    init();
+</script>
+</body></html>

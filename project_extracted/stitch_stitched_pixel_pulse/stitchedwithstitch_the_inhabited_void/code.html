@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>stitchedwithstitch | Woven from Code</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #131318;
+            color: #e4e1e9;
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(209, 188, 255, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 2px;
+            background: #00eefc;
+            transform: translate(-50%, -50%);
+        }
+        .interaction-prompt {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: #d1bcff;
+            background: rgba(19, 19, 24, 0.8);
+            padding: 8px 16px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 100;
+            text-transform: uppercase;
+            text-align: center;
+        }
+        .controls-hint {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #958da3;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .dialogue-box {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            background: rgba(31, 31, 36, 0.9);
+            border-left: 4px solid #d1bcff;
+            padding: 20px;
+            border-radius: 4px;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .dialogue-box.active {
+            opacity: 1;
+            transform: translate(-50%, 0%);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#d1bcff",
+                        "outline": "#958da3",
+                        "background": "#131318",
+                        "surface": "#131318",
+                        "secondary": "#00dbe9",
+                        "tertiary": "#ffade1"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background">
+<canvas id="gl-canvas"></canvas>
+<div class="crosshair"></div>
+<div class="interaction-prompt" id="interaction-prompt">Press E to Interact</div>
+<div class="dialogue-box" id="dialogue-box">
+<p class="text-primary font-mono text-[10px] uppercase tracking-widest mb-2" id="avatar-name">System</p>
+<p class="text-on-surface mb-4 italic text-sm leading-relaxed" id="dialogue-quote"></p>
+<div class="w-full h-px bg-outline/20 mb-3"></div>
+<p class="text-secondary text-xs" id="dialogue-fact"></p>
+</div>
+<div class="controls-hint">
+        WASD to Fly • MOUSE to Look • CLICK to Start
+    </div>
+<main class="fixed inset-0 z-10 flex items-center justify-center pointer-events-none" id="hero-container">
+<div class="text-center px-6 max-w-3xl opacity-20 transition-opacity duration-1000" id="hero-text">
+<h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4 text-primary">Woven by Code.</h1>
+<p class="font-mono text-xs tracking-[0.4em] uppercase text-outline">Interactive Digital Craftsmanship</p>
+</div>
+</main>
+<script>
+        let scene, camera, renderer, clock;
+        let starPixels, noiseWave;
+        let navObjects = [];
+        let avatars = [];
+        let controls = { forward: false, backward: false, left: false, right: false };
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let pitch = 0, yaw = 0;
+        const speed = 0.2;
+        
+        let isLocked = false;
+        let raycaster = new THREE.Raycaster();
+        let intersectedObj = null;
+
+        const quotes = [
+            "The orange is the window to the Tuesday.",
+            "Water sleeps only when the fish are counting stars.",
+            "Gravity is just an opinion held by the pavement.",
+            "If time were a circle, we'd all be very dizzy.",
+            "The silence between two mirrors is where the ghosts live.",
+            "A sandwich is a bridge built for hunger.",
+            "To be or not to be is a binary question with a hexadecimal answer.",
+            "Yesterday's echoes are tomorrow's breakfast.",
+            "Clouds are the thoughts of the earth before it rains.",
+            "Laughter is the color purple on a Tuesday."
+        ];
+
+        const facts = [
+            "Wombat poop is cube-shaped.",
+            "Octopuses have three hearts.",
+            "Bananas are technically berries.",
+            "A group of flamingos is called a 'flamboyance'.",
+            "There are more trees on Earth than stars in the Milky Way.",
+            "Honey never spoils.",
+            "The smell of freshly-cut grass is a plant distress signal.",
+            "Koalas have fingerprints just like humans.",
+            "Scotland's national animal is the Unicorn.",
+            "The first oranges weren't orange."
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0e0e13);
+            scene.fog = new THREE.FogExp2(0x0e0e13, 0.04);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 10);
+
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('gl-canvas'), 
+                antialias: true 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            clock = new THREE.Clock();
+
+            // 1. Starfield
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 6000;
+            const positions = new Float32Array(starCount * 3);
+            for(let i=0; i < starCount * 3; i++) {
+                positions[i] = (Math.random() - 0.5) * 150;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({ size: 0.04, color: 0x958da3, transparent: true, opacity: 0.5 });
+            starPixels = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starPixels);
+
+            // 2. Navigation Anchors
+            const navData = [
+                { text: 'EXPERIENCE', pos: [15, 2, -20], color: 0x7000ff },
+                { text: 'GALLERY', pos: [-18, -3, -30], color: 0x00eefc },
+                { text: 'CONNECT', pos: [25, -8, -40], color: 0xffade1 },
+                { text: 'ABOUT', pos: [-12, 12, -25], color: 0xd1bcff },
+                { text: 'STITCH', pos: [0, 0, -5], color: 0xffffff, isBrand: true }
+            ];
+
+            navData.forEach(data => {
+                const group = new THREE.Group();
+                const geom = data.isBrand ? new THREE.IcosahedronGeometry(1.5, 1) : new THREE.BoxGeometry(1.2, 1.2, 1.2);
+                const mat = new THREE.MeshBasicMaterial({ color: data.color, wireframe: true, transparent: true, opacity: 0.8 });
+                const mesh = new THREE.Mesh(geom, mat);
+                group.add(mesh);
+                const shellGeom = new THREE.BoxGeometry(2, 2, 2);
+                const shellMat = new THREE.MeshBasicMaterial({ color: data.color, wireframe: true, transparent: true, opacity: 0 });
+                const shell = new THREE.Mesh(shellGeom, shellMat);
+                group.add(shell);
+                group.position.set(...data.pos);
+                group.userData = { label: data.text, healFactor: 1, color: data.color, isNav: true };
+                navObjects.push(group);
+                scene.add(group);
+            });
+
+            // 3. 100 Procedural Avatars
+            const colors = [0xd1bcff, 0x00eefc, 0xffade1, 0x7000ff, 0x00dbe9];
+            for (let i = 0; i < 100; i++) {
+                createAvatar(colors[i % colors.length]);
+            }
+
+            // 4. User POV Noise Trail
+            const trailCount = 120;
+            const trailGeom = new THREE.BufferGeometry();
+            const trailPos = new Float32Array(trailCount * 3);
+            const trailColors = new Float32Array(trailCount * 3);
+            trailGeom.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+            trailGeom.setAttribute('color', new THREE.BufferAttribute(trailColors, 3));
+            const trailMat = new THREE.PointsMaterial({ size: 0.12, vertexColors: true, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending });
+            noiseWave = new THREE.Points(trailGeom, trailMat);
+            scene.add(noiseWave);
+
+            setupControls();
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function createAvatar(color) {
+            const group = new THREE.Group();
+            
+            // Random pixel-art geometry
+            const geoms = [
+                new THREE.BoxGeometry(0.6, 0.6, 0.6),
+                new THREE.OctahedronGeometry(0.5),
+                new THREE.TorusGeometry(0.3, 0.1, 8, 8),
+                new THREE.TetrahedronGeometry(0.6)
+            ];
+            const geom = geoms[Math.floor(Math.random() * geoms.length)];
+            const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+            const mesh = new THREE.Mesh(geom, mat);
+            group.add(mesh);
+
+            // Floating bits
+            for(let i=0; i<3; i++) {
+                const bit = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.15), mat);
+                bit.position.set((Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2);
+                group.add(bit);
+            }
+
+            const range = 80;
+            group.position.set(
+                (Math.random() - 0.5) * range,
+                (Math.random() - 0.5) * range,
+                (Math.random() - 0.5) * range - 20
+            );
+
+            group.userData = {
+                label: "Wanderer-" + Math.floor(Math.random()*999),
+                quote: quotes[Math.floor(Math.random() * quotes.length)],
+                fact: facts[Math.floor(Math.random() * facts.length)],
+                orbit: Math.random() * Math.PI * 2,
+                orbitSpeed: 0.002 + Math.random() * 0.005,
+                driftSpeed: 0.1 + Math.random() * 0.3,
+                color: color,
+                isAvatar: true
+            };
+
+            avatars.push(group);
+            scene.add(group);
+        }
+
+        function setupControls() {
+            document.body.addEventListener('click', () => {
+                if(!isLocked) {
+                    document.body.requestPointerLock();
+                    document.getElementById('hero-text').style.opacity = '1';
+                } else if(intersectedObj) {
+                    interact(intersectedObj);
+                }
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                isLocked = document.pointerLockElement === document.body;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isLocked) return;
+                yaw -= e.movementX * 0.002;
+                pitch -= e.movementY * 0.002;
+                pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+            });
+
+            const onKey = (val) => (e) => {
+                switch(e.code) {
+                    case 'KeyW': case 'ArrowUp': controls.forward = val; break;
+                    case 'KeyS': case 'ArrowDown': controls.backward = val; break;
+                    case 'KeyA': case 'ArrowLeft': controls.left = val; break;
+                    case 'KeyD': case 'ArrowRight': controls.right = val; break;
+                    case 'KeyE': if(val && intersectedObj) interact(intersectedObj); break;
+                }
+            };
+            document.addEventListener('keydown', onKey(true));
+            document.addEventListener('keyup', onKey(false));
+        }
+
+        function interact(obj) {
+            if (obj.userData.isAvatar) {
+                const dialogue = document.getElementById('dialogue-box');
+                document.getElementById('avatar-name').innerText = obj.userData.label;
+                document.getElementById('dialogue-quote').innerText = `"${obj.userData.quote}"`;
+                document.getElementById('dialogue-fact').innerText = `Fact: ${obj.userData.fact}`;
+                
+                dialogue.classList.add('active');
+                setTimeout(() => dialogue.classList.remove('active'), 5000);
+            }
+            
+            // Visual feedback
+            const originalColor = obj.userData.color;
+            const flash = new THREE.Color(0xffffff);
+            obj.traverse(child => { if(child.material) child.material.color.set(flash); });
+            setTimeout(() => {
+                obj.traverse(child => { if(child.material) child.material.color.set(originalColor); });
+            }, 300);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            if (isLocked) {
+                direction.z = Number(controls.forward) - Number(controls.backward);
+                direction.x = Number(controls.right) - Number(controls.left);
+                direction.normalize();
+                velocity.z = direction.z * speed;
+                velocity.x = direction.x * speed;
+                camera.rotation.order = "YXZ";
+                camera.rotation.y = yaw;
+                camera.rotation.x = pitch;
+                camera.translateZ(-velocity.z);
+                camera.translateX(velocity.x);
+
+                // Update Trail
+                const positions = noiseWave.geometry.attributes.position.array;
+                const colorsArr = noiseWave.geometry.attributes.color.array;
+                for (let i = 119; i > 0; i--) {
+                    positions[i * 3] = positions[(i - 1) * 3];
+                    positions[i * 3 + 1] = positions[(i - 1) * 3 + 1];
+                    positions[i * 3 + 2] = positions[(i - 1) * 3 + 2];
+                }
+                const trailOrigin = new THREE.Vector3(0, -0.1, 0.4).applyQuaternion(camera.quaternion).add(camera.position);
+                positions[0] = trailOrigin.x; positions[1] = trailOrigin.y; positions[2] = trailOrigin.z;
+                const trailColor = new THREE.Color();
+                for (let i = 0; i < 120; i++) {
+                    trailColor.setHSL((time * 0.1 + i/120) % 1, 0.8, 0.6);
+                    colorsArr[i * 3] = trailColor.r; colorsArr[i * 3 + 1] = trailColor.g; colorsArr[i * 3 + 2] = trailColor.b;
+                }
+                noiseWave.geometry.attributes.position.needsUpdate = true;
+                noiseWave.geometry.attributes.color.needsUpdate = true;
+            }
+
+            // Interactive Raycasting
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const targets = [...navObjects, ...avatars].flatMap(o => o.children);
+            const intersects = raycaster.intersectObjects(targets);
+            
+            const prompt = document.getElementById('interaction-prompt');
+            if (intersects.length > 0) {
+                intersectedObj = intersects[0].object.parent;
+                prompt.style.opacity = '1';
+                prompt.innerText = `Focus: ${intersectedObj.userData.label} [E]`;
+            } else {
+                intersectedObj = null;
+                prompt.style.opacity = '0';
+            }
+
+            // Animate Objects
+            [...navObjects, ...avatars].forEach(obj => {
+                const dist = camera.position.distanceTo(obj.position);
+                
+                if (obj.userData.isAvatar) {
+                    obj.userData.orbit += obj.userData.orbitSpeed;
+                    obj.position.y += Math.sin(time + obj.userData.orbit) * 0.005;
+                    obj.rotation.x += 0.01;
+                    obj.rotation.z += 0.01;
+                    
+                    // Auto-open dialogue if very close
+                    if (dist < 3 && !document.getElementById('dialogue-box').classList.contains('active')) {
+                        interact(obj);
+                    }
+                } else if (obj.userData.isNav) {
+                    obj.rotation.y += 0.01;
+                    if (dist < 5) {
+                        obj.children[1].material.opacity = (5 - dist) / 5 * 0.4;
+                        obj.children[1].scale.setScalar(1 + Math.sin(time * 5) * 0.1);
+                    } else {
+                        obj.children[1].material.opacity *= 0.9;
+                    }
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body></html>

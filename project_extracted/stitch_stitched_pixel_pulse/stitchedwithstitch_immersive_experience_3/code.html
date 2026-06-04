@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>stitchedwithstitch | Woven from Code</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Updated Three.js CDN as requested -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #131318;
+            color: #e4e1e9;
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        /* Shimmer Effect for Hero Text */
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        .shimmer-text {
+            background: linear-gradient(90deg, #e4e1e9 0%, #d1bcff 25%, #00eefc 50%, #d1bcff 75%, #e4e1e9 100%);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shimmer 8s linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .shimmer-text {
+                animation: shimmer 20s linear infinite;
+            }
+        }
+        .reveal-text {
+            animation: reveal-fade 6s forwards ease-out;
+        }
+        @keyframes reveal-fade {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }
+            20% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+            80% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+            100% { opacity: 0.1; transform: translateY(-10px) scale(1.05); filter: blur(4px); }
+        }
+        .pulse-indicator {
+            animation: pulse-slow 3s infinite ease-in-out;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#958da3",
+                        "inverse-primary": "#7212ff",
+                        "on-background": "#e4e1e9",
+                        "on-primary-container": "#ddcdff",
+                        "surface-container-lowest": "#0e0e13",
+                        "on-error": "#690005",
+                        "surface-variant": "#35343a",
+                        "surface-container-low": "#1b1b20",
+                        "secondary-container": "#00eefc",
+                        "on-secondary": "#00363a",
+                        "secondary-fixed-dim": "#00dbe9",
+                        "on-tertiary-fixed": "#3b002f",
+                        "secondary-fixed": "#7df4ff",
+                        "surface-bright": "#39383e",
+                        "surface-tint": "#d1bcff",
+                        "primary-fixed-dim": "#d1bcff",
+                        "secondary": "#00dbe9",
+                        "inverse-surface": "#e4e1e9",
+                        "on-surface-variant": "#ccc3da",
+                        "surface-container": "#1f1f24",
+                        "tertiary-container": "#ac008e",
+                        "primary-container": "#7000ff",
+                        "on-tertiary-container": "#ffc4e7",
+                        "error-container": "#93000a",
+                        "tertiary": "#ffade1",
+                        "outline-variant": "#4a4457",
+                        "tertiary-fixed": "#ffd8ed",
+                        "surface": "#131318",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-highest": "#35343a",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed": "#002022",
+                        "on-secondary-container": "#00686f",
+                        "surface-container-high": "#2a292f",
+                        "on-tertiary-fixed-variant": "#86006f",
+                        "tertiary-fixed-dim": "#ffade1",
+                        "surface-dim": "#131318",
+                        "primary": "#d1bcff",
+                        "primary-fixed": "#e9ddff",
+                        "on-primary": "#3c0090",
+                        "on-surface": "#e4e1e9",
+                        "on-tertiary": "#5f004e",
+                        "on-primary-fixed-variant": "#5700c9",
+                        "on-primary-fixed": "#23005b",
+                        "on-secondary-fixed-variant": "#004f54",
+                        "inverse-on-surface": "#303035",
+                        "background": "#131318"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "container-padding": "24px",
+                        "trail-width": "2px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Hanken Grotesk"],
+                        "display-lg-mobile": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "label-sm": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "1.1", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-sm": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background overflow-hidden">
+<!-- Three.js Canvas -->
+<canvas id="gl-canvas"></canvas>
+<!-- UI Overlay: TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-container-padding py-4 max-w-7xl mx-auto mt-base rounded-full border border-outline-variant/30 bg-surface/40 backdrop-blur-xl shadow-[0_0_20px_rgba(209,188,255,0.15)]">
+<div class="flex items-center gap-4">
+<span class="font-label-sm text-label-sm tracking-[0.2em] uppercase text-secondary">stitchedwithstitch</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-primary font-bold border-b border-primary pb-1 font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">Experience</a>
+<a class="text-on-surface-variant font-medium font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">Gallery</a>
+<a class="text-on-surface-variant font-medium font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">Connect</a>
+<a class="text-on-surface-variant font-medium font-label-sm text-label-sm hover:text-tertiary transition-colors duration-300" href="#">About</a>
+</nav>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-variant/50 transition-all active:scale-90 scale-95 duration-200" onclick="window.location.reload()">
+<span class="material-symbols-outlined text-primary">refresh</span>
+</button>
+</div>
+</header>
+<!-- Central Reveal Text -->
+<main class="relative z-10 w-full h-screen flex items-center justify-center pointer-events-none">
+<div class="text-center reveal-text px-6 max-w-3xl">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg tracking-[-0.05em] mb-6 shimmer-text">
+                Woven by Code. <br/>
+<span class="opacity-90">Healed by AI.</span>
+</h1>
+<p class="font-label-sm text-label-sm text-outline tracking-[0.4em] uppercase">Interactive Digital Craftsmanship</p>
+</div>
+</main>
+<!-- UI Overlay: Footer -->
+<footer class="fixed bottom-0 w-full z-40 flex flex-col md:flex-row justify-between items-center px-container-padding py-8 pointer-events-none">
+<div class="flex items-center gap-4 pointer-events-auto">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary pulse-indicator shadow-[0_0_8px_#00dbe9]"></div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-[0.2em]">© 2024 STITCHEDWITHSTITCH. WOVEN FROM CODE.</span>
+</div>
+</div>
+<nav class="flex gap-6 mt-4 md:mt-0 pointer-events-auto">
+<a class="font-label-sm text-label-sm text-outline hover:text-on-background transition-opacity opacity-80 hover:opacity-100" href="#">Journal</a>
+<a class="font-label-sm text-label-sm text-outline hover:text-on-background transition-opacity opacity-80 hover:opacity-100" href="#">Pulse</a>
+<a class="font-label-sm text-label-sm text-outline hover:text-on-background transition-opacity opacity-80 hover:opacity-100" href="#">Privacy</a>
+</nav>
+</footer>
+<!-- Three.js Implementation -->
+<script>
+        let scene, camera, renderer, clock;
+        let starPixels, shapes = [], noiseWave;
+        let mouse = new THREE.Vector2(-10, -10);
+        let targetMouse = new THREE.Vector2(-10, -10);
+        let lerpSpeed = 0.05;
+
+        // Reduce animation speed for accessibility if needed
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            lerpSpeed = 0.01;
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0e0e13); // Deepest purple/black
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('gl-canvas'), 
+                antialias: true,
+                alpha: true 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            clock = new THREE.Clock();
+
+            // 1. Pixel Starfield (Square pixels instead of rounds)
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 2000;
+            const positions = new Float32Array(starCount * 3);
+            for(let i=0; i < starCount * 3; i++) {
+                positions[i] = (Math.random() - 0.5) * 20;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.02,
+                color: 0x958da3,
+                transparent: true,
+                opacity: 0.4,
+                sizeAttenuation: true
+            });
+            // Custom shader to make stars square-ish (standard PointsMaterial with small size is often pixelated/square anyway)
+            starPixels = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starPixels);
+
+            // 2. Floating Wireframe Zen Objects
+            const icosaGeometry = new THREE.IcosahedronGeometry(0.8, 1);
+            const cubeGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+            const wireMaterial = new THREE.MeshBasicMaterial({
+                color: 0x7000ff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.2
+            });
+
+            for(let i=0; i<15; i++) {
+                const geom = Math.random() > 0.5 ? icosaGeometry : cubeGeometry;
+                const shape = new THREE.Mesh(geom, wireMaterial.clone());
+                
+                shape.position.set(
+                    (Math.random() - 0.5) * 12,
+                    (Math.random() - 0.5) * 8,
+                    (Math.random() - 0.5) * 4
+                );
+                shape.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+                
+                shapes.push({
+                    mesh: shape,
+                    rotationSpeed: (Math.random() - 0.5) * 0.01,
+                    floatOffset: Math.random() * Math.PI * 2,
+                    baseScale: 0.5 + Math.random() * 0.5,
+                    baseColor: new THREE.Color(0x7000ff)
+                });
+                scene.add(shape);
+            }
+
+            // 3. Pseudomorphic Noise Wave (Mouse Trail)
+            const particleCount = 40;
+            const waveGeometry = new THREE.BufferGeometry();
+            const wavePositions = new Float32Array(particleCount * 3);
+            const waveColors = new Float32Array(particleCount * 3);
+            
+            waveGeometry.setAttribute('position', new THREE.BufferAttribute(wavePositions, 3));
+            waveGeometry.setAttribute('color', new THREE.BufferAttribute(waveColors, 3));
+            
+            const waveMaterial = new THREE.PointsMaterial({
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+            
+            noiseWave = new THREE.Points(waveGeometry, waveMaterial);
+            scene.add(noiseWave);
+            
+            // Interaction
+            window.addEventListener('mousemove', (e) => {
+                targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                targetMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            window.addEventListener('resize', onWindowResize);
+
+            // 4. Start Self-Healing interval
+            setInterval(healScene, 5000);
+
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Self-Healing Logic: Gently reset drifted values
+        function healScene() {
+            shapes.forEach(s => {
+                // Ensure scale doesn't explode
+                if (s.mesh.scale.x > 3 || s.mesh.scale.x < 0.1) {
+                    s.mesh.scale.setScalar(s.baseScale);
+                }
+                // Gently nudge back to viewable bounds if drifted too far
+                if (Math.abs(s.mesh.position.x) > 15) s.mesh.position.x *= 0.8;
+                if (Math.abs(s.mesh.position.y) > 10) s.mesh.position.y *= 0.8;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta();
+
+            // Smooth interaction
+            mouse.x += (targetMouse.x - mouse.x) * lerpSpeed;
+            mouse.y += (targetMouse.y - mouse.y) * lerpSpeed;
+
+            // Background rotation
+            starPixels.rotation.y += 0.0005;
+            starPixels.rotation.x += 0.0002;
+
+            // Update Shapes
+            const raycaster = new THREE.Vector3(mouse.x * 5, mouse.y * 3, 0);
+            shapes.forEach((s, i) => {
+                s.mesh.rotation.x += s.rotationSpeed;
+                s.mesh.rotation.y += s.rotationSpeed;
+                
+                // Zen Floating
+                s.mesh.position.y += Math.sin(time + s.floatOffset) * 0.002;
+                
+                // Proximity Interaction
+                const dist = s.mesh.position.distanceTo(raycaster);
+                if (dist < 2.5) {
+                    const pulse = 1 + Math.sin(time * 5) * 0.2;
+                    s.mesh.scale.lerp(new THREE.Vector3().setScalar(s.baseScale * 1.8 * pulse), 0.1);
+                    s.mesh.material.color.lerp(new THREE.Color(0x00dbe9), 0.1);
+                    s.mesh.material.opacity = 0.6;
+                } else {
+                    s.mesh.scale.lerp(new THREE.Vector3().setScalar(s.baseScale), 0.05);
+                    s.mesh.material.color.lerp(s.baseColor, 0.05);
+                    s.mesh.material.opacity = 0.2;
+                }
+            });
+
+            // Update Noise Wave (Trail)
+            const positions = noiseWave.geometry.attributes.position.array;
+            const colors = noiseWave.geometry.attributes.color.array;
+            
+            // Shift trail positions
+            for (let i = particleCount - 1; i > 0; i--) {
+                positions[i * 3] = positions[(i - 1) * 3];
+                positions[i * 3 + 1] = positions[(i - 1) * 3 + 1];
+                positions[i * 3 + 2] = positions[(i - 1) * 3 + 2];
+            }
+            
+            // Lead particle follows mouse with noise
+            const noiseX = Math.sin(time * 2) * 0.1;
+            const noiseY = Math.cos(time * 2) * 0.1;
+            positions[0] = mouse.x * 7 + noiseX;
+            positions[1] = mouse.y * 4 + noiseY;
+            positions[2] = Math.sin(time) * 0.5;
+
+            // Color Shifting Trail
+            const trailColor = new THREE.Color();
+            for (let i = 0; i < particleCount; i++) {
+                const ratio = i / particleCount;
+                // Shifting through design palette: Purple -> Cyan -> Pink
+                const hue = (time * 0.1 + ratio) % 1;
+                trailColor.setHSL(hue, 0.8, 0.6);
+                colors[i * 3] = trailColor.r;
+                colors[i * 3 + 1] = trailColor.g;
+                colors[i * 3 + 2] = trailColor.b;
+            }
+
+            noiseWave.geometry.attributes.position.needsUpdate = true;
+            noiseWave.geometry.attributes.color.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body></html>
