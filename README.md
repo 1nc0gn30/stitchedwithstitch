@@ -1,3 +1,30 @@
+# stitchedwithstitch
+
+This is my entry for the #Google Stitch Challenge via Contra.
+
+## Overview
+This is my entry for the #Google Stitch Challenge via Contra.
+
+## Tech Stack
+- HTML
+
+## Project Structure
+```
+stitchedwithstitch/
+  - project_extracted
+  (20 files total)
+```
+
+## Getting Started
+
+### Usage
+Open index.html in your browser or serve locally.
+Use: npx serve .
+
+## Original README
+<details>
+<summary>Click to expand original README</summary>
+
 # stitchedwithstitch — Woven by Code
 
 > An immersive, self-healing digital void built with Google Stitch and deployed to Netlify in one click.
@@ -168,3 +195,26 @@ This is original work created during the Google Stitch × Contra challenge windo
 ---
 
 *Built with curiosity, chaos, and Google Stitch.*
+
+</details>
+
+## TODO / Roadmap
+- [ ] Add unit tests
+- [ ] Add LICENSE file
+- [ ] Add CI/CD pipeline
+- [ ] Add contribution guidelines (CONTRIBUTING.md)
+- [ ] Improve error handling and edge cases
+- [ ] Add environment variable documentation
+- [ ] Add code comments and inline documentation
+
+## Deployment
+This project can be deployed to Netlify, Vercel, or any static host.
+
+## Author
+**Neal Frazier** - [@AshAmplifies](https://github.com/1nc0gn30)
+
+## Links
+- GitHub: https://github.com/1nc0gn30/stitchedwithstitch
+
+---
+*This README was enhanced as part of the neals-projects-2026 batch update.*
