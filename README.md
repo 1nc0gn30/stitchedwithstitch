@@ -1,27 +1,37 @@
-# stitchedwithstitch
+<!-- xonettn -->
+<div align="center">
+
+# 📦 Stitchedwithstitch
 
 This is my entry for the #Google Stitch Challenge via Contra.
 
-## Overview
+
+![Deploy](https://img.shields.io/badge/Deployed-Netlify-00C7B7?logo=netlify&logoColor=white)
+
+</div>
+
+---
+
+## 📋 Overview
 This is my entry for the #Google Stitch Challenge via Contra.
 
-## Tech Stack
+## 📦 Tech Stack
 - HTML
 
-## Project Structure
+## 🗂️ Project Structure
 ```
 stitchedwithstitch/
   - project_extracted
   (20 files total)
 ```
 
-## Getting Started
+## 🚀 Getting Started
 
-### Usage
+### 📖 Usage
 Open index.html in your browser or serve locally.
 Use: npx serve .
 
-## Original README
+## 📂 Original README
 <details>
 <summary>Click to expand original README</summary>
 
@@ -41,7 +51,7 @@ The project was created entirely inside **Google Stitch** through 7 iterative, s
 
 ---
 
-## Challenge Submission Overview
+## 📋 Challenge Submission Overview
 
 | Field | Details |
 |-------|---------|
@@ -86,7 +96,7 @@ The project follows the **Neon Pixel Synthesis** design system generated during 
 
 ---
 
-## How I Used Stitch (Workflow)
+## 🔄 How I Used Stitch (Workflow)
 
 This project was not planned in advance — it was discovered through iteration. Each step used Stitch's streaming generation and in-place editing to evolve the experience live on the canvas.
 
@@ -109,7 +119,7 @@ This project was not planned in advance — it was discovered through iteration.
 
 ---
 
-## Motion, Interactivity & Technical Execution
+## 📦 Motion, Interactivity & Technical Execution
 
 - **Browser-native Three.js** — No bundler, no framework lock-in. Pure HTML + CDN Three.js + Tailwind.
 - **Performance-conscious** — `requestAnimationFrame` loop with delta-time physics, 150-segment trail geometry with color buffer updates, and efficient proximity checks.
@@ -118,12 +128,12 @@ This project was not planned in advance — it was discovered through iteration.
 
 ---
 
-## Screenshots & Video
+## 📸 Screenshots & Video
 
-### Final Build — Glitch Impact Experience
+### 🔨 Final Build — Glitch Impact Experience
 ![Final Glitch Impact Experience](./project_extracted/stitch_stitched_pixel_pulse/stitchedwithstitch_glitch_impact_experience/screen.png)
 
-### Home — Original Living Void
+### 📂 Home — Original Living Void
 ![Original Living Void](./project_extracted/stitch_stitched_pixel_pulse/stitchedwithstitch_home/screen.png)
 
 ### The Inhabited Void — 100 Avatars
@@ -152,7 +162,7 @@ Coming from a self-taught background — grinding through TryHackMe labs and fre
 
 ---
 
-## Social Sharing Checklist
+## ✅ Social Sharing Checklist
 
 To complete your submission, post to **X** and/or **LinkedIn** and tag `@stitchbygoogle`:
 
@@ -167,7 +177,7 @@ To complete your submission, post to **X** and/or **LinkedIn** and tag `@stitchb
 
 ---
 
-## Project Structure
+## 🗂️ Project Structure
 
 ```
 stitch_stitched_pixel_pulse/
@@ -188,7 +198,7 @@ stitch_stitched_pixel_pulse/
 
 ---
 
-## License & Attribution
+## 📜 License & Attribution
 
 This is original work created during the Google Stitch × Contra challenge window (June 2026). No external IP is used beyond fair-use open-source libraries (Three.js, Tailwind CSS) and Google Fonts.
 
@@ -198,7 +208,7 @@ This is original work created during the Google Stitch × Contra challenge windo
 
 </details>
 
-## TODO / Roadmap
+## 📝 TODO / Roadmap
 - [ ] Add unit tests
 - [ ] Add LICENSE file
 - [ ] Add CI/CD pipeline
@@ -207,14 +217,22 @@ This is original work created during the Google Stitch × Contra challenge windo
 - [ ] Add environment variable documentation
 - [ ] Add code comments and inline documentation
 
-## Deployment
+## 🚀 Deployment
 This project can be deployed to Netlify, Vercel, or any static host.
 
-## Author
+## 👤 Author
 **Neal Frazier** - [@AshAmplifies](https://github.com/1nc0gn30)
 
-## Links
+## 🔗 Links
 - GitHub: https://github.com/1nc0gn30/stitchedwithstitch
 
 ---
 *This README was enhanced as part of the neals-projects-2026 batch update.*
+
+---
+
+<div align="center">
+
+**[xonettn]** · Built by [Neal Frazier](https://github.com/1nc0gn30) · [@AshAmplifies](https://twitter.com/AshAmplifies)
+
+</div>
